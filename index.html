@@ -13,6 +13,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- React and Recharts libraries for interactive charts -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
+    
     <style>
         /* Custom styles for the app */
         body {
@@ -319,31 +324,35 @@
         alertBox.style.display = 'none';
         
         try {
-            if (!hasReactStack()) {
-                // Try multiple CDN sources for better reliability
+            if (hasReactStack()) {
+                reactChartsEnabled = true;
+                console.log('%cReact charts enabled - libraries pre-loaded', 'color:#2563eb');
+            } else {
+                // Fallback: try to load dynamically if pre-loaded libraries failed
+                console.warn('Pre-loaded React/Recharts not available, attempting dynamic load...');
+                
                 try {
                     await Promise.all([
                         loadScript('https://unpkg.com/react@18/umd/react.production.min.js'),
                         loadScript('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js')
                     ]);
+                    await loadScript('https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js');
                 } catch (e) {
-                    // Fallback to different CDN
+                    // Try alternative CDN
                     await Promise.all([
                         loadScript('https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'),
                         loadScript('https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js')
                     ]);
-                }
-                
-                try {
-                    await loadScript('https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js');
-                } catch (e) {
-                    // Fallback CDN for Recharts
                     await loadScript('https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js');
                 }
+                
+                if (hasReactStack()) {
+                    reactChartsEnabled = true;
+                    console.log('%cReact charts enabled - dynamic fallback succeeded', 'color:#2563eb');
+                } else {
+                    throw new Error('React/Recharts not available after dynamic load attempt');
+                }
             }
-            if (!hasReactStack()) throw new Error('React/Recharts not available after load');
-            reactChartsEnabled = true;
-            console.log('%cReact charts enabled', 'color:#2563eb');
         } catch (err) {
             reactChartsEnabled = false;
             alertBox.style.display = 'block';
