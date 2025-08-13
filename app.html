@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Pulse Dashboard</title>
+    
+    <!-- Using Tailwind CSS for a modern, responsive design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for better typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for the app */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+            color: #d1d5db; /* text-gray-300 */
+        }
+
+        /* Styling for the custom SVG chart tooltip */
+        .chart-wrap {
+            position: relative;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: rgba(17, 24, 39, 0.95); /* bg-gray-900 with opacity */
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            transform: translate(-50%, -120%);
+            z-index: 10;
+            border: 1px solid #374151; /* border-gray-700 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        /* Recharts custom tooltip style */
+        .recharts-default-tooltip {
+            background-color: #1f2937 !important; /* bg-gray-800 */
+            border-color: #374151 !important; /* border-gray-700 */
+            border-radius: 0.5rem !important;
+        }
+        .recharts-tooltip-label {
+            color: #f3f4f6 !important; /* text-gray-100 */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-6 lg:p-8">
+        
+        <!-- Header Section -->
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-white">Agricultural Market Pulse</h1>
+            <p class="text-gray-400 mt-1">Analysis of market messages from <span id="meta-date-start"></span> to <span id="meta-date-end"></span>.</p>
+        </header>
+
+        <!-- Alert box for errors (e.g., offline) -->
+        <div id="alert" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+            <strong class="font-bold">Error:</strong>
+            <span class="block sm:inline" id="alert-message"></span>
+        </div>
+
+        <!-- Main Stats & Controls -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+            <div class="text-center md:text-left mb-4 md:mb-0">
+                <div class="text-4xl font-bold text-white" id="meta-messages">...</div>
+                <div class="text-sm text-gray-400">Total Messages Analyzed</div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button id="enable-react" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+                    Reload Charts
+                </button>
+                <button id="dl" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+                    Download JSON
+                </button>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Top Crops Chart -->
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <h2 class="text-lg font-semibold text-white mb-3">Top Crops</h2>
+                <div class="flex space-x-2 mb-4">
+                    <button data-chart="crops" data-sort="count" aria-pressed="true" class="ctrl text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-full">Sort by Count</button>
+                    <button data-chart="crops" data-sort="name" aria-pressed="false" class="ctrl text-xs bg-gray-900 hover:bg-gray-600 px-3 py-1 rounded-full">Sort by Name</button>
+                </div>
+                <div id="crops-bars" class="h-80 w-full"></div>
+            </div>
+            <!-- Top Geographies Chart -->
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <h2 class="text-lg font-semibold text-white mb-3">Top Geographies</h2>
+                <div class="flex space-x-2 mb-4">
+                    <button data-chart="geos" data-sort="count" aria-pressed="true" class="ctrl text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-full">Sort by Count</button>
+                    <button data-chart="geos" data-sort="name" aria-pressed="false" class="ctrl text-xs bg-gray-900 hover:bg-gray-600 px-3 py-1 rounded-full">Sort by Name</button>
+                </div>
+                <div id="geos-bars" class="h-80 w-full"></div>
+            </div>
+            <!-- Top Keywords Chart -->
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <h2 class="text-lg font-semibold text-white mb-3">Top Keywords</h2>
+                <div class="flex space-x-2 mb-4">
+                    <button data-chart="keywords" data-sort="count" aria-pressed="true" class="ctrl text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-full">Sort by Count</button>
+                    <button data-chart="keywords" data-sort="name" aria-pressed="false" class="ctrl text-xs bg-gray-900 hover:bg-gray-600 px-3 py-1 rounded-full">Sort by Name</button>
+                </div>
+                <div id="keywords-bars" class="h-80 w-full"></div>
+            </div>
+        </div>
+
+        <!-- Data Tables Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Crop-Geo Pairs -->
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <h2 class="text-lg font-semibold text-white mb-3">Top Crop-Geography Pairs</h2>
+                <input id="q-cg" type="text" placeholder="Filter pairs..." class="w-full bg-gray-900 border border-gray-600 rounded-md px-3 py-2 mb-4 focus:ring-blue-500 focus:border-blue-500">
+                <div class="overflow-y-auto h-96">
+                    <table id="t-cg" class="w-full text-sm text-left text-gray-300">
+                        <thead class="text-xs text-gray-400 uppercase bg-gray-700 sticky top-0"><tr><th class="p-2">#</th><th class="p-2">Crop</th><th class="p-2">Geography</th><th class="p-2 text-right">Count</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Crop-Keyword Pairs -->
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <h2 class="text-lg font-semibold text-white mb-3">Top Crop-Keyword Pairs</h2>
+                <input id="q-ck" type="text" placeholder="Filter pairs..." class="w-full bg-gray-900 border border-gray-600 rounded-md px-3 py-2 mb-4 focus:ring-blue-500 focus:border-blue-500">
+                <div class="overflow-y-auto h-96">
+                    <table id="t-ck" class="w-full text-sm text-left text-gray-300">
+                        <thead class="text-xs text-gray-400 uppercase bg-gray-700 sticky top-0"><tr><th class="p-2">#</th><th class="p-2">Crop</th><th class="p-2">Keyword</th><th class="p-2 text-right">Count</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Geo-Keyword Pairs -->
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <h2 class="text-lg font-semibold text-white mb-3">Top Geo-Keyword Pairs</h2>
+                <input id="q-gk" type="text" placeholder="Filter pairs..." class="w-full bg-gray-900 border border-gray-600 rounded-md px-3 py-2 mb-4 focus:ring-blue-500 focus:border-blue-500">
+                <div class="overflow-y-auto h-96">
+                    <table id="t-gk" class="w-full text-sm text-left text-gray-300">
+                        <thead class="text-xs text-gray-400 uppercase bg-gray-700 sticky top-0"><tr><th class="p-2">#</th><th class="p-2">Geography</th><th class="p-2">Keyword</th><th class="p-2 text-right">Count</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    // =====================
+    // Data (same as the analysis summary)
+    // =====================
+    const META = { messages: 470, dateStart: "2021-04-15", dateEnd: "2025-06-17" };
+    const TOP_CROPS = [
+        { name: "Citrus", count: 892 }, { name: "Avocado", count: 822 }, { name: "Banana", count: 803 },
+        { name: "Grapes", count: 752 }, { name: "Mango", count: 601 }, { name: "Tomato", count: 380 },
+        { name: "Kiwi", count: 345 }, { name: "Garlic", count: 323 }, { name: "Potato", count: 273 },
+        { name: "Lemon", count: 268 }, { name: "Melon", count: 255 }, { name: "Onion", count: 253 },
+        { name: "Strawberry", count: 225 }, { name: "Watermelon", count: 225 }, { name: "Orange", count: 204 },
+        { name: "Cherry", count: 198 }, { name: "Pineapple", count: 184 }, { name: "Apple", count: 158 },
+        { name: "Blueberry", count: 157 }, { name: "Pear", count: 141 }
+    ];
+    const TOP_GEOS = [
+        { name: "Peru", count: 681 }, { name: "Spain", count: 676 }, { name: "Italy", count: 408 },
+        { name: "South Africa", count: 398 }, { name: "China", count: 393 }, { name: "Mexico", count: 392 },
+        { name: "France", count: 389 }, { name: "Brazil", count: 384 }, { name: "Morocco", count: 355 },
+        { name: "Germany", count: 340 }, { name: "Chile", count: 286 }, { name: "Egypt", count: 257 }
+    ];
+    const TOP_KEYWORDS = [
+        { name: "price", count: 1393 }, { name: "harvest", count: 927 }, { name: "supply", count: 915 },
+        { name: "demand", count: 871 }, { name: "weather", count: 617 }, { name: "logistics", count: 594 },
+        { name: "acreage", count: 422 }, { name: "new variety", count: 341 }, { name: "growth", count: 329 },
+        { name: "tariff", count: 215 }, { name: "challenge", count: 196 }, { name: "shortage", count: 196 },
+        { name: "labor", count: 59 }
+    ];
+    const TOP_PAIRS_CROP_GEO = [
+        { crop: "Garlic", geo: "Netherlands", blocks: 325 }, { crop: "Pear", geo: "USA", blocks: 322 },
+        { crop: "Pear", geo: "Peru", blocks: 321 }, { crop: "Garlic", geo: "USA", blocks: 317 },
+        { crop: "Garlic", geo: "Peru", blocks: 312 }, { crop: "Pear", geo: "Netherlands", blocks: 301 },
+        { crop: "Pear", geo: "Italy", blocks: 299 }, { crop: "Pear", geo: "South Africa", blocks: 291 },
+        { crop: "Garlic", geo: "Italy", blocks: 290 }, { crop: "Garlic", geo: "South Africa", blocks: 283 },
+        { crop: "Pear", geo: "Spain", blocks: 281 }, { crop: "Garlic", geo: "Spain", blocks: 280 },
+        { crop: "Lime", geo: "USA", blocks: 263 }, { crop: "Blackberry", geo: "Netherlands", blocks: 263 },
+        { crop: "Avocado", geo: "USA", blocks: 262 }, { crop: "Lime", geo: "Peru", blocks: 261 },
+        { crop: "Blackberry", geo: "Peru", blocks: 261 }, { crop: "Blackberry", geo: "USA", blocks: 261 },
+        { crop: "Citrus", geo: "USA", blocks: 261 }, { crop: "Avocado", geo: "Peru", blocks: 260 }
+    ];
+    const TOP_PAIRS_CROP_KEYWORD = [
+        { crop: "Pear", keyword: "harvest", blocks: 385 }, { crop: "Pear", keyword: "price", blocks: 380 },
+        { crop: "Garlic", keyword: "price", blocks: 371 }, { crop: "Garlic", keyword: "harvest", blocks: 369 },
+        { crop: "Pear", keyword: "supply", blocks: 361 }, { crop: "Garlic", keyword: "supply", blocks: 349 },
+        { crop: "Pear", keyword: "demand", blocks: 347 }, { crop: "Pear", keyword: "new variety", blocks: 337 },
+        { crop: "Garlic", keyword: "demand", blocks: 333 }, { crop: "Garlic", keyword: "new variety", blocks: 330 },
+        { crop: "Pear", keyword: "weather", blocks: 322 }, { crop: "Blackberry", keyword: "harvest", blocks: 321 },
+        { crop: "Blackberry", keyword: "price", blocks: 319 }, { crop: "Garlic", keyword: "weather", blocks: 314 },
+        { crop: "Lime", keyword: "price", blocks: 311 }, { crop: "Lime", keyword: "harvest", blocks: 311 },
+        { crop: "Avocado", keyword: "harvest", blocks: 306 }, { crop: "Citrus", keyword: "harvest", blocks: 306 },
+        { crop: "Citrus", keyword: "price", blocks: 305 }, { crop: "Avocado", keyword: "price", blocks: 297 }
+    ];
+    const TOP_PAIRS_GEO_KEYWORD = [
+        { geo: "USA", keyword: "harvest", blocks: 306 }, { geo: "Peru", keyword: "price", blocks: 301 },
+        { geo: "Peru", keyword: "harvest", blocks: 301 }, { geo: "USA", keyword: "price", blocks: 298 },
+        { geo: "Peru", keyword: "supply", blocks: 290 }, { geo: "USA", keyword: "supply", blocks: 288 },
+        { geo: "Netherlands", keyword: "price", blocks: 284 }, { geo: "Italy", keyword: "price", blocks: 283 },
+        { geo: "Netherlands", keyword: "harvest", blocks: 282 }, { geo: "South Africa", keyword: "harvest", blocks: 277 },
+        { geo: "Peru", keyword: "demand", blocks: 275 }, { geo: "Italy", keyword: "harvest", blocks: 275 },
+        { geo: "USA", keyword: "demand", blocks: 273 }, { geo: "Netherlands", keyword: "supply", blocks: 272 },
+        { geo: "USA", keyword: "new variety", blocks: 270 }, { geo: "South Africa", keyword: "price", blocks: 268 },
+        { geo: "Spain", keyword: "harvest", blocks: 267 }, { geo: "Peru", keyword: "new variety", blocks: 267 },
+        { geo: "USA", keyword: "weather", blocks: 261 }, { geo: "Spain", keyword: "price", blocks: 260 }
+    ];
+
+    // =====================
+    // Tiny charting util (SVG) — offline fallback
+    // =====================
+    function renderSVGBars(containerId, rows, opts) {
+        opts = opts || {};
+        const highlight = (opts.highlight || '').toLowerCase();
+        const maxBars = opts.maxBars || 15;
+        const data = rows.slice(0, maxBars);
+        const host = document.getElementById(containerId);
+        host.innerHTML = '';
+        host.classList.add('chart-wrap');
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        host.appendChild(tooltip);
+
+        const width = host.clientWidth || 640;
+        const labelW = 100;
+        const rightPad = 56;
+        const barH = 20;
+        const gap = 8;
+        const height = data.length * (barH + gap) + 30;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', `0 0 ${labelW + rightPad + width} ${height}`);
+        svg.setAttribute('class', 'svg-host w-full h-full');
+
+        const defs = document.createElementNS(svg.namespaceURI, 'defs');
+        function grad(id, from, to) {
+            const g = document.createElementNS(svg.namespaceURI, 'linearGradient');
+            g.id = id;
+            g.setAttribute('x1', '0%'); g.setAttribute('x2', '100%'); g.setAttribute('y1', '0%'); g.setAttribute('y2', '0%');
+            const s1 = document.createElementNS(svg.namespaceURI, 'stop');
+            s1.setAttribute('offset', '0%'); s1.setAttribute('stop-color', from);
+            const s2 = document.createElementNS(svg.namespaceURI, 'stop');
+            s2.setAttribute('offset', '100%'); s2.setAttribute('stop-color', to);
+            g.appendChild(s1);
+            g.appendChild(s2);
+            defs.appendChild(g);
+        }
+        grad('gradBlue', '#3b82f6', '#60a5fa');
+        grad('gradWarm', '#f97316', '#fb923c');
+        svg.appendChild(defs);
+
+        const max = data.reduce((m, r) => r.count > m ? r.count : m, 1);
+        const xScale = (v) => (v / max) * (width - rightPad);
+
+        const base = document.createElementNS(svg.namespaceURI, 'line');
+        base.setAttribute('x1', labelW); base.setAttribute('x2', labelW); base.setAttribute('y1', 0); base.setAttribute('y2', height - 10);
+        base.setAttribute('stroke', '#374151'); base.setAttribute('stroke-width', '1');
+        svg.appendChild(base);
+
+        data.forEach((r, i) => {
+            const y = i * (barH + gap) + 15;
+            const tl = document.createElementNS(svg.namespaceURI, 'text');
+            tl.setAttribute('x', 8); tl.setAttribute('y', y + barH * 0.7); tl.setAttribute('font-size', '14'); tl.setAttribute('font-weight', '600'); tl.setAttribute('fill', '#d1d5db');
+            tl.textContent = r.name;
+            svg.appendChild(tl);
+            
+            const w = Math.max(2, xScale(r.count));
+            const rect = document.createElementNS(svg.namespaceURI, 'rect');
+            rect.setAttribute('x', labelW); rect.setAttribute('y', y); rect.setAttribute('width', w); rect.setAttribute('height', barH); rect.setAttribute('rx', 4); rect.setAttribute('ry', 4);
+            rect.setAttribute('fill', r.name.toLowerCase() === highlight ? 'url(#gradWarm)' : 'url(#gradBlue)');
+            rect.setAttribute('tabindex', '0'); rect.setAttribute('role', 'img'); rect.setAttribute('aria-label', `${r.name}: ${r.count}`);
+
+            function showTip(clientX, clientY) {
+                tooltip.textContent = `${r.name}: ${r.count.toLocaleString()}`;
+                const hostRect = host.getBoundingClientRect();
+                tooltip.style.left = `${clientX - hostRect.left}px`;
+                tooltip.style.top = `${clientY - hostRect.top}px`;
+                tooltip.style.opacity = 1;
+            }
+            rect.addEventListener('mousemove', e => showTip(e.clientX, e.clientY));
+            rect.addEventListener('mouseenter', e => showTip(e.clientX, e.clientY));
+            rect.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+            rect.addEventListener('focus', () => { const bb = rect.getBoundingClientRect(); showTip(bb.left + bb.width / 2, bb.top); });
+            rect.addEventListener('blur', () => { tooltip.style.opacity = 0; });
+            svg.appendChild(rect);
+
+            const tv = document.createElementNS(svg.namespaceURI, 'text');
+            tv.setAttribute('x', labelW + w + 8); tv.setAttribute('y', y + barH * 0.7); tv.setAttribute('font-size', '14'); tv.setAttribute('font-weight', '700'); tv.setAttribute('fill', '#f9fafb');
+            tv.textContent = r.count.toLocaleString();
+            svg.appendChild(tv);
+        });
+        host.appendChild(svg);
+    }
+
+    // =====================
+    // React/Recharts — online optional loader
+    // =====================
+    let reactChartsEnabled = false;
+    const reactRoots = {};
+
+    function hasReactStack() { return !!(window.React && window.ReactDOM && window.Recharts); }
+    function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.async = true; s.onload = res; s.onerror = () => rej(new Error(`Failed to load ${src}`)); document.head.appendChild(s); }); }
+
+    async function enableReactCharts() {
+        const alertBox = document.getElementById('alert');
+        const alertMessage = document.getElementById('alert-message');
+        alertBox.style.display = 'none';
+        
+        try {
+            if (!hasReactStack()) {
+                // Try multiple CDN sources for better reliability
+                try {
+                    await Promise.all([
+                        loadScript('https://unpkg.com/react@18/umd/react.production.min.js'),
+                        loadScript('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js')
+                    ]);
+                } catch (e) {
+                    // Fallback to different CDN
+                    await Promise.all([
+                        loadScript('https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'),
+                        loadScript('https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js')
+                    ]);
+                }
+                
+                try {
+                    await loadScript('https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js');
+                } catch (e) {
+                    // Fallback CDN for Recharts
+                    await loadScript('https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js');
+                }
+            }
+            if (!hasReactStack()) throw new Error('React/Recharts not available after load');
+            reactChartsEnabled = true;
+            console.log('%cReact charts enabled', 'color:#2563eb');
+        } catch (err) {
+            reactChartsEnabled = false;
+            alertBox.style.display = 'block';
+            alertMessage.textContent = `Could not load React/Recharts (likely offline or blocked). Falling back to built-in charts. Error: ${err.message}`;
+            console.warn('Failed to load React/Recharts:', err);
+        } finally {
+            drawAll();
+        }
+    }
+
+    function renderReactBars(containerId, rows, opts) {
+        const { React: ReactLib, ReactDOM: ReactDOMLib, Recharts: RC } = window;
+        const host = document.getElementById(containerId);
+        host.innerHTML = '';
+        host.classList.remove('chart-wrap');
+        const root = reactRoots[containerId] || (reactRoots[containerId] = ReactDOMLib.createRoot(host));
+        const data = rows.slice(0, (opts && opts.maxBars) || 15);
+        
+        const elem = ReactLib.createElement(RC.ResponsiveContainer, { width: '100%', height: '100%' },
+            ReactLib.createElement(RC.BarChart, { data: data, layout: "vertical", margin: { top: 5, right: 20, left: 20, bottom: 5 } }, [
+                ReactLib.createElement(RC.CartesianGrid, { key: 'g', strokeDasharray: '3 3', stroke: '#374151' }),
+                ReactLib.createElement(RC.XAxis, { key: 'x', type: 'number', stroke: '#9ca3af', tick: { fontSize: 14, fontWeight: 600 } }),
+                ReactLib.createElement(RC.YAxis, { key: 'y', dataKey: 'name', type: 'category', width: 80, stroke: '#9ca3af', tick: { fontSize: 14, fontWeight: 600 } }),
+                ReactLib.createElement(RC.Tooltip, { key: 't', cursor: { fill: 'rgba(255, 255, 255, 0.1)' }, contentStyle: { fontSize: '14px', fontWeight: '600' } }),
+                ReactLib.createElement(RC.Bar, { key: 'b', dataKey: 'count', fill: '#3b82f6', radius: [0, 4, 4, 0] })
+            ])
+        );
+        root.render(elem);
+    }
+
+    // =====================
+    // Tables & filters
+    // =====================
+    const $ = (id) => document.getElementById(id);
+
+    function renderPairsTable(tableId, data, cols, q) {
+        const tbody = $(tableId).querySelector('tbody');
+        tbody.textContent = '';
+        const filtered = !q ? data : data.filter(r => (Object.values(r).join(' ').toLowerCase().indexOf(q) > -1));
+        filtered.sort((a, b) => b.blocks - a.blocks);
+        
+        filtered.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            tr.className = 'border-b border-gray-700 hover:bg-gray-600/50';
+            const td = (t, cls) => { const e = document.createElement('td'); if (cls) e.className = `p-2 ${cls}`; else e.className = 'p-2'; e.textContent = t; return e; }
+            tr.appendChild(td(i + 1, 'text-gray-500'));
+            tr.appendChild(td(r[cols[0]]));
+            tr.appendChild(td(r[cols[1]]));
+            tr.appendChild(td(r.blocks.toLocaleString(), 'text-right font-medium'));
+            tbody.appendChild(tr);
+        });
+        return filtered.length;
+    }
+
+    function downloadJSON(name, data) {
+        try {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            const alertBox = $('alert');
+            $('alert-message').textContent = 'Download blocked by browser. Right-click → Save As… on the page, or request a zipped version.';
+            alertBox.style.display = 'block';
+        }
+    }
+
+    // =====================
+    // Render & controls
+    // =====================
+    const sortState = { crops: 'count', geos: 'count', keywords: 'count' };
+
+    function drawAll() {
+        const crops = TOP_CROPS.slice().sort(sortState.crops === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => b.count - a.count);
+        const geos = TOP_GEOS.slice().sort(sortState.geos === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => b.count - a.count);
+        const keywords = TOP_KEYWORDS.slice().sort(sortState.keywords === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => b.count - a.count);
+
+        if (reactChartsEnabled && hasReactStack()) {
+            renderReactBars('crops-bars', crops, { maxBars: 15 });
+            renderReactBars('geos-bars', geos, { maxBars: 12 });
+            renderReactBars('keywords-bars', keywords, { maxBars: 12 });
+        } else {
+            renderSVGBars('crops-bars', crops, { maxBars: 15 });
+            renderSVGBars('geos-bars', geos, { maxBars: 12 });
+            renderSVGBars('keywords-bars', keywords, { maxBars: 12, highlight: 'logistics' });
+        }
+    }
+
+    function wireChartSorters() {
+        document.querySelectorAll('.ctrl[data-chart][data-sort]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const chart = btn.getAttribute('data-chart');
+                const mode = btn.getAttribute('data-sort');
+                sortState[chart] = mode;
+                document.querySelectorAll(`.ctrl[data-chart="${chart}"]`).forEach(b => {
+                    b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+                    b.classList.toggle('bg-gray-700', b === btn);
+                    b.classList.toggle('bg-gray-900', b !== btn);
+                });
+                drawAll();
+            });
+        });
+    }
+
+    function boot() {
+        // Populate meta info
+        $('meta-messages').textContent = META.messages.toLocaleString();
+        $('meta-date-start').textContent = new Date(META.dateStart).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        $('meta-date-end').textContent = new Date(META.dateEnd).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+
+        // Wire up controls
+        $('enable-react').addEventListener('click', enableReactCharts);
+        wireChartSorters();
+
+        // Render tables
+        const onInput = (id, handler) => $(id).addEventListener('input', e => handler(e.target.value.toLowerCase()));
+        renderPairsTable('t-cg', TOP_PAIRS_CROP_GEO, ['crop', 'geo'], '');
+        onInput('q-cg', q => renderPairsTable('t-cg', TOP_PAIRS_CROP_GEO, ['crop', 'geo'], q));
+        renderPairsTable('t-ck', TOP_PAIRS_CROP_KEYWORD, ['crop', 'keyword'], '');
+        onInput('q-ck', q => renderPairsTable('t-ck', TOP_PAIRS_CROP_KEYWORD, ['crop', 'keyword'], q));
+        renderPairsTable('t-gk', TOP_PAIRS_GEO_KEYWORD, ['geo', 'keyword'], '');
+        onInput('q-gk', q => renderPairsTable('t-gk', TOP_PAIRS_GEO_KEYWORD, ['geo', 'keyword'], q));
+        
+        $('dl').addEventListener('click', () => {
+            downloadJSON('market_pulse_data.json', {
+                meta: META,
+                topCrops: TOP_CROPS,
+                topGeographies: TOP_GEOS,
+                topKeywords: TOP_KEYWORDS,
+                pairs: {
+                    cropGeo: TOP_PAIRS_CROP_GEO,
+                    cropKeyword: TOP_PAIRS_CROP_KEYWORD,
+                    geoKeyword: TOP_PAIRS_GEO_KEYWORD
+                }
+            });
+        });
+
+        // Automatically try to load React charts on start
+        enableReactCharts();
+
+        // --- Self-tests (diagnostics) ---
+        try {
+            console.assert(Array.isArray(TOP_CROPS) && TOP_CROPS[0].name === 'Citrus', 'Crops data sanity');
+            console.assert(TOP_KEYWORDS.find(k => k.name === 'price').count === 1393, 'Keywords count sanity');
+            console.log('%cSelf-checks passed', 'color:green');
+        } catch (err) {
+            console.warn('Self-checks failed', err);
+        }
+    }
+
+    // Boot the application
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
+    
+    // Redraw charts on window resize to ensure responsiveness
+    window.addEventListener('resize', () => {
+        // Debounce resize event for performance
+        clearTimeout(window.resizeTimer);
+        window.resizeTimer = setTimeout(drawAll, 250);
+    });
+    </script>
+</body>
+</html>
