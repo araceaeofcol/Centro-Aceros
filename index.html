@@ -13,11 +13,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- React and Recharts libraries for interactive charts -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
-    
     <style>
         /* Custom styles for the app */
         body {
@@ -46,16 +41,6 @@
             border: 1px solid #374151; /* border-gray-700 */
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        
-        /* Recharts custom tooltip style */
-        .recharts-default-tooltip {
-            background-color: #1f2937 !important; /* bg-gray-800 */
-            border-color: #374151 !important; /* border-gray-700 */
-            border-radius: 0.5rem !important;
-        }
-        .recharts-tooltip-label {
-            color: #f3f4f6 !important; /* text-gray-100 */
-        }
     </style>
 </head>
 <body class="antialiased">
@@ -68,12 +53,6 @@
             <p class="text-gray-400 mt-1">Analysis of market messages from <span id="meta-date-start"></span> to <span id="meta-date-end"></span>.</p>
         </header>
 
-        <!-- Alert box for errors (e.g., offline) -->
-        <div id="alert" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
-            <strong class="font-bold">Error:</strong>
-            <span class="block sm:inline" id="alert-message"></span>
-        </div>
-
         <!-- Main Stats & Controls -->
         <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-gray-800/50 p-4 rounded-lg border border-gray-700">
             <div class="text-center md:text-left mb-4 md:mb-0">
@@ -81,9 +60,6 @@
                 <div class="text-sm text-gray-400">Total Messages Analyzed</div>
             </div>
             <div class="flex items-center space-x-3">
-                <button id="enable-react" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
-                    Reload Charts
-                </button>
                 <button id="dl" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
                     Download JSON
                 </button>
@@ -310,80 +286,6 @@
     }
 
     // =====================
-    // React/Recharts — online optional loader
-    // =====================
-    let reactChartsEnabled = false;
-    const reactRoots = {};
-
-    function hasReactStack() { return !!(window.React && window.ReactDOM && window.Recharts); }
-    function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.async = true; s.onload = res; s.onerror = () => rej(new Error(`Failed to load ${src}`)); document.head.appendChild(s); }); }
-
-    async function enableReactCharts() {
-        const alertBox = document.getElementById('alert');
-        const alertMessage = document.getElementById('alert-message');
-        alertBox.style.display = 'none';
-        
-        try {
-            if (hasReactStack()) {
-                reactChartsEnabled = true;
-                console.log('%cReact charts enabled - libraries pre-loaded', 'color:#2563eb');
-            } else {
-                // Fallback: try to load dynamically if pre-loaded libraries failed
-                console.warn('Pre-loaded React/Recharts not available, attempting dynamic load...');
-                
-                try {
-                    await Promise.all([
-                        loadScript('https://unpkg.com/react@18/umd/react.production.min.js'),
-                        loadScript('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js')
-                    ]);
-                    await loadScript('https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js');
-                } catch (e) {
-                    // Try alternative CDN
-                    await Promise.all([
-                        loadScript('https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'),
-                        loadScript('https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js')
-                    ]);
-                    await loadScript('https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js');
-                }
-                
-                if (hasReactStack()) {
-                    reactChartsEnabled = true;
-                    console.log('%cReact charts enabled - dynamic fallback succeeded', 'color:#2563eb');
-                } else {
-                    throw new Error('React/Recharts not available after dynamic load attempt');
-                }
-            }
-        } catch (err) {
-            reactChartsEnabled = false;
-            alertBox.style.display = 'block';
-            alertMessage.textContent = `Could not load React/Recharts (likely offline or blocked). Falling back to built-in charts. Error: ${err.message}`;
-            console.warn('Failed to load React/Recharts:', err);
-        } finally {
-            drawAll();
-        }
-    }
-
-    function renderReactBars(containerId, rows, opts) {
-        const { React: ReactLib, ReactDOM: ReactDOMLib, Recharts: RC } = window;
-        const host = document.getElementById(containerId);
-        host.innerHTML = '';
-        host.classList.remove('chart-wrap');
-        const root = reactRoots[containerId] || (reactRoots[containerId] = ReactDOMLib.createRoot(host));
-        const data = rows.slice(0, (opts && opts.maxBars) || 15);
-        
-        const elem = ReactLib.createElement(RC.ResponsiveContainer, { width: '100%', height: '100%' },
-            ReactLib.createElement(RC.BarChart, { data: data, layout: "vertical", margin: { top: 5, right: 20, left: 20, bottom: 5 } }, [
-                ReactLib.createElement(RC.CartesianGrid, { key: 'g', strokeDasharray: '3 3', stroke: '#374151' }),
-                ReactLib.createElement(RC.XAxis, { key: 'x', type: 'number', stroke: '#9ca3af', tick: { fontSize: 14, fontWeight: 600 } }),
-                ReactLib.createElement(RC.YAxis, { key: 'y', dataKey: 'name', type: 'category', width: 80, stroke: '#9ca3af', tick: { fontSize: 14, fontWeight: 600 } }),
-                ReactLib.createElement(RC.Tooltip, { key: 't', cursor: { fill: 'rgba(255, 255, 255, 0.1)' }, contentStyle: { fontSize: '14px', fontWeight: '600' } }),
-                ReactLib.createElement(RC.Bar, { key: 'b', dataKey: 'count', fill: '#3b82f6', radius: [0, 4, 4, 0] })
-            ])
-        );
-        root.render(elem);
-    }
-
-    // =====================
     // Tables & filters
     // =====================
     const $ = (id) => document.getElementById(id);
@@ -435,15 +337,9 @@
         const geos = TOP_GEOS.slice().sort(sortState.geos === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => b.count - a.count);
         const keywords = TOP_KEYWORDS.slice().sort(sortState.keywords === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => b.count - a.count);
 
-        if (reactChartsEnabled && hasReactStack()) {
-            renderReactBars('crops-bars', crops, { maxBars: 15 });
-            renderReactBars('geos-bars', geos, { maxBars: 12 });
-            renderReactBars('keywords-bars', keywords, { maxBars: 12 });
-        } else {
-            renderSVGBars('crops-bars', crops, { maxBars: 15 });
-            renderSVGBars('geos-bars', geos, { maxBars: 12 });
-            renderSVGBars('keywords-bars', keywords, { maxBars: 12, highlight: 'logistics' });
-        }
+        renderSVGBars('crops-bars', crops, { maxBars: 15 });
+        renderSVGBars('geos-bars', geos, { maxBars: 12 });
+        renderSVGBars('keywords-bars', keywords, { maxBars: 12, highlight: 'logistics' });
     }
 
     function wireChartSorters() {
@@ -469,7 +365,6 @@
         $('meta-date-end').textContent = new Date(META.dateEnd).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 
         // Wire up controls
-        $('enable-react').addEventListener('click', enableReactCharts);
         wireChartSorters();
 
         // Render tables
@@ -495,8 +390,8 @@
             });
         });
 
-        // Automatically try to load React charts on start
-        enableReactCharts();
+        // Render the charts
+        drawAll();
 
         // --- Self-tests (diagnostics) ---
         try {
