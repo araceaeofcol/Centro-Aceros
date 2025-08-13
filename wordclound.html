@@ -29,7 +29,7 @@
   <header>
     <div class="panel">
       <strong>Interactive Word Cloud</strong>
-      <span style="font-size:12px;color:var(--muted)">• drop in a text file or use <code>words.txt</code></span>
+      <span style="font-size:12px;color:var(--muted)">• drop in a text file or using <code>cleaned_extracted_content.txt</code></span>
     </div>
     <div class="panel">
       <input id="fileInput" type="file" accept=".txt,.md,.csv" />
@@ -37,6 +37,10 @@
       <input id="minFreq" type="range" min="1" max="10" value="1" />
       <span id="minFreqVal" style="font-size:12px;color:var(--muted)">1</span>
       <label><input type="checkbox" id="useStopwords" checked /> filter stopwords</label>
+    </div>
+    <div class="panel">
+      <a href="extra.html" style="color:#93c5fd;padding:8px 16px;background:#374151;border-radius:6px;text-decoration:none;font-size:14px;">← Back to Landing</a>
+      <a href="index.html" style="color:#93c5fd;padding:8px 16px;background:#374151;border-radius:6px;text-decoration:none;font-size:14px;">📊 Dashboard</a>
     </div>
   </header>
   <canvas id="cloud"></canvas>
@@ -86,6 +90,12 @@ function applyFilters() {
 }
 
 function redraw() {
+  // Check if WordCloud library is available
+  if (typeof WordCloud === 'undefined') {
+    displayWordsAsList();
+    return;
+  }
+  
   sizeCanvas();
   const maxCount = currentList.length ? currentList[0][1] : 1;
   const weightFactor = (c) => 8 + (c / maxCount) * Math.min(60, Math.max(20, Math.min(canvas.width, canvas.height) * 0.06));
@@ -119,7 +129,7 @@ function redraw() {
 
 async function loadWordsTxt() {
   try {
-    const res = await fetch('words.txt', { cache: 'no-store' });
+    const res = await fetch('cleaned_extracted_content.txt', { cache: 'no-store' });
     if (!res.ok) return; // silently skip if not present
     const text = await res.text();
     baseList = tokenize(text);
@@ -127,6 +137,47 @@ async function loadWordsTxt() {
   } catch (e) {
     // ignore, maybe user will upload a file
   }
+}
+
+// Fallback function to display words as a list when WordCloud library is not available
+function displayWordsAsList() {
+  if (!currentList.length) return;
+  
+  const canvas = document.getElementById('cloud');
+  canvas.style.display = 'none';
+  
+  // Create or get the fallback container
+  let fallback = document.getElementById('fallback-display');
+  if (!fallback) {
+    fallback = document.createElement('div');
+    fallback.id = 'fallback-display';
+    fallback.style.cssText = `
+      padding: 20px;
+      background: var(--bg);
+      color: var(--fg);
+      height: calc(100vh - 120px);
+      overflow-y: auto;
+    `;
+    canvas.parentNode.insertBefore(fallback, canvas.nextSibling);
+  }
+  
+  const maxCount = currentList[0][1];
+  const minSize = 12;
+  const maxSize = 48;
+  
+  fallback.innerHTML = `
+    <div style="text-align: center; margin-bottom: 20px; color: var(--muted);">
+      <p>Word Cloud Library not available - showing word list instead</p>
+      <p>Total words found: ${currentList.length}</p>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
+      ${currentList.slice(0, 100).map(([word, count]) => {
+        const size = minSize + ((count / maxCount) * (maxSize - minSize));
+        const opacity = 0.6 + (count / maxCount) * 0.4;
+        return `<span style="font-size: ${size}px; opacity: ${opacity}; color: var(--fg); margin: 4px; white-space: nowrap;" title="${word}: ${count}">${word}</span>`;
+      }).join('')}
+    </div>
+  `;
 }
 
 fileInput.addEventListener('change', () => {
