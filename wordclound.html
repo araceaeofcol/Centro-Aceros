@@ -29,7 +29,7 @@
   <header>
     <div class="panel">
       <strong>Interactive Word Cloud</strong>
-      <span style="font-size:12px;color:var(--muted)">• drop in a text file or use <code>words.txt</code></span>
+      <span style="font-size:12px;color:var(--muted)">• drop in a text file or using <code>cleaned_extracted_content.txt</code></span>
     </div>
     <div class="panel">
       <input id="fileInput" type="file" accept=".txt,.md,.csv" />
@@ -37,6 +37,10 @@
       <input id="minFreq" type="range" min="1" max="10" value="1" />
       <span id="minFreqVal" style="font-size:12px;color:var(--muted)">1</span>
       <label><input type="checkbox" id="useStopwords" checked /> filter stopwords</label>
+    </div>
+    <div class="panel">
+      <a href="extra.html" style="color:#93c5fd;padding:8px 16px;background:#374151;border-radius:6px;text-decoration:none;font-size:14px;">← Back to Landing</a>
+      <a href="index.html" style="color:#93c5fd;padding:8px 16px;background:#374151;border-radius:6px;text-decoration:none;font-size:14px;">📊 Dashboard</a>
     </div>
   </header>
   <canvas id="cloud"></canvas>
@@ -119,7 +123,7 @@ function redraw() {
 
 async function loadWordsTxt() {
   try {
-    const res = await fetch('words.txt', { cache: 'no-store' });
+    const res = await fetch('cleaned_extracted_content.txt', { cache: 'no-store' });
     if (!res.ok) return; // silently skip if not present
     const text = await res.text();
     baseList = tokenize(text);
