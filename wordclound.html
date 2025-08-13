@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Interactive Word Cloud</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js" integrity="sha512-NV8vY6A8oBqQy0yqj9q4hU7m8e2+3mQJj3xR3t3H2nA8M6x8Oa6m2z5p4c8kX0WgJ0xT6bqfSx9Sx7s6mQvGmA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+  :root { --bg:#0b0c10; --fg:#e5e7eb; --muted:#9ca3af; }
+  html,body { height:100%; margin:0; background:var(--bg); color:var(--fg); font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  .wrap { display:flex; flex-direction:column; height:100%; }
+  header { padding:12px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  header input[type="file"] { color:var(--muted); }
+  label { font-size:14px; color:var(--muted); }
+  #cloud { flex:1; width:100%; }
+  .panel { display:flex; gap:10px; align-items:center; }
+  #tooltip {
+    position:fixed; pointer-events:none; background:#111827; color:#f9fafb; padding:6px 8px;
+    border-radius:6px; font-size:12px; opacity:0; transform:translate(-50%, -140%);
+    box-shadow:0 6px 20px rgba(0,0,0,0.35);
+  }
+  a { color:#93c5fd; text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="panel">
+      <strong>Interactive Word Cloud</strong>
+      <span style="font-size:12px;color:var(--muted)">• drop in a text file or use <code>words.txt</code></span>
+    </div>
+    <div class="panel">
+      <input id="fileInput" type="file" accept=".txt,.md,.csv" />
+      <label for="minFreq">Min freq:</label>
+      <input id="minFreq" type="range" min="1" max="10" value="1" />
+      <span id="minFreqVal" style="font-size:12px;color:var(--muted)">1</span>
+      <label><input type="checkbox" id="useStopwords" checked /> filter stopwords</label>
+    </div>
+  </header>
+  <canvas id="cloud"></canvas>
+</div>
+<div id="tooltip"></div>
+
+<script>
+const stopwords = new Set([
+  "the","a","an","and","or","but","if","then","else","on","in","at","to","from","for","of","by","with",
+  "is","are","was","were","be","been","being","this","that","these","those","it","its","as","into","over",
+  "we","you","they","i","me","my","our","your","their","he","she","his","her","them","us","not","no","yes",
+  "do","does","did","done","can","could","should","would","will","just","so","than","too","very"
+]);
+
+const canvas = document.getElementById('cloud');
+const tooltip = document.getElementById('tooltip');
+const minFreq = document.getElementById('minFreq');
+const minFreqVal = document.getElementById('minFreqVal');
+const fileInput = document.getElementById('fileInput');
+const useStopwords = document.getElementById('useStopwords');
+
+let baseList = [];   // full list of [word, count]
+let currentList = []; // filtered by min freq, etc.
+let lastDrawOpts = null;
+
+function sizeCanvas() {
+  canvas.width = canvas.clientWidth = window.innerWidth;
+  canvas.height = canvas.clientHeight = window.innerHeight - document.querySelector('header').offsetHeight;
+}
+
+function tokenize(text) {
+  // split on non-letters, keep unicode letters & apostrophes
+  const tokens = text.toLowerCase().split(/[^\\p{L}'’]+/u).filter(Boolean);
+  const counts = new Map();
+  for (const t of tokens) {
+    if (useStopwords.checked && stopwords.has(t)) continue;
+    if (t.length < 2) continue;
+    counts.set(t, (counts.get(t) || 0) + 1);
+  }
+  return Array.from(counts.entries()).sort((a,b) => b[1]-a[1]);
+}
+
+function applyFilters() {
+  const min = Number(minFreq.value);
+  currentList = baseList.filter(([w,c]) => c >= min);
+  redraw();
+}
+
+function redraw() {
+  sizeCanvas();
+  const maxCount = currentList.length ? currentList[0][1] : 1;
+  const weightFactor = (c) => 8 + (c / maxCount) * Math.min(60, Math.max(20, Math.min(canvas.width, canvas.height) * 0.06));
+
+  const opts = {
+    list: currentList,
+    gridSize: Math.round(8 * (canvas.width / 1024)),
+    weightFactor,
+    rotateRatio: 0.15,
+    rotationSteps: 2,
+    backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0b0c10',
+    color: () => undefined, // let library choose randomness; keeps contrast
+    drawOutOfBound: false,
+    shrinkToFit: true,
+    clearCanvas: true,
+    hover: (item, dim, ev) => {
+      if (!item) { tooltip.style.opacity = 0; return; }
+      tooltip.textContent = `${item[0]} — ${item[1]}`;
+      tooltip.style.left = ev.pageX + 'px';
+      tooltip.style.top = ev.pageY + 'px';
+      tooltip.style.opacity = 1;
+    },
+    click: (item) => {
+      if (!item) return;
+      alert(`${item[0]}: ${item[1]}`);
+    }
+  };
+  lastDrawOpts = opts;
+  WordCloud(canvas, opts);
+}
+
+async function loadWordsTxt() {
+  try {
+    const res = await fetch('words.txt', { cache: 'no-store' });
+    if (!res.ok) return; // silently skip if not present
+    const text = await res.text();
+    baseList = tokenize(text);
+    applyFilters();
+  } catch (e) {
+    // ignore, maybe user will upload a file
+  }
+}
+
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files?.[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    baseList = tokenize(String(e.target.result || ''));
+    applyFilters();
+  };
+  reader.readAsText(f);
+});
+
+minFreq.addEventListener('input', () => {
+  minFreqVal.textContent = minFreq.value;
+  applyFilters();
+});
+useStopwords.addEventListener('change', applyFilters);
+window.addEventListener('resize', () => {
+  if (!lastDrawOpts) return;
+  // re-render with same list
+  redraw();
+});
+
+// boot
+sizeCanvas();
+loadWordsTxt();
+</script>
+</body>
+</html>
