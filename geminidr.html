@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro Aceros: Strategic Opportunity Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: A top-down, single-page dashboard. It starts with a high-level strategic overview (Macro-Trends). The core is an "Interactive Opportunity Explorer" where users select one of four opportunities via tabs, causing a central panel to dynamically update with that opportunity's details, including a data visualization (chart) and qualitative analysis. This structure avoids overwhelming the user and facilitates direct comparison. The page concludes with a "Comparative Analysis" table and final recommendations. This flow mirrors a decision-making process: understand the context, explore the options, then compare to decide. -->
+    <!-- Visualization & Content Choices: Macro-Trends -> Inform -> Styled Cards w/ Icons -> Scannable overview -> HTML/Tailwind. Opportunity Growth Data -> Show Change -> Dynamic Bar Chart -> Visualizes key growth metrics for each opportunity -> Chart.js. Opportunity Details -> Inform/Organize -> Dynamic Text Blocks -> Presents detailed analysis for the selected opportunity -> JS. Comparative Matrix -> Compare -> HTML Table -> Direct comparison of all options -> HTML/Tailwind. Final Recommendations -> Inform -> Styled List -> Actionable final advice -> HTML/Tailwind. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .opportunity-tab {
+            transition: all 0.3s ease;
+        }
+        .opportunity-tab.active {
+            background-color: #0e7490; /* cyan-700 */
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-cyan-800">Centro Aceros</h1>
+                <h2 class="hidden sm:block text-xl font-medium text-slate-600">Strategic Opportunity Explorer</h2>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="overview" class="mb-12">
+            <h2 class="text-3xl font-bold text-center mb-2">Emerging Markets for On-Farm Logistics</h2>
+            <p class="text-lg text-slate-600 text-center max-w-3xl mx-auto mb-8">
+                This interactive report identifies and analyzes high-potential markets for 'cable vía' systems. The following macro-trends create a favorable environment for expansion into new agricultural frontiers.
+            </p>
+            <div class="grid md:grid-cols-3 gap-6 text-center">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="text-4xl mb-3 text-cyan-600">📈</div>
+                    <h3 class="text-xl font-semibold mb-2">Consumer-Driven Demand</h3>
+                    <p class="text-slate-600">A global shift towards "superfoods" and healthy eating fuels demand for high-value, delicate crops that require careful handling.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="text-4xl mb-3 text-cyan-600">🌍</div>
+                    <h3 class="text-xl font-semibold mb-2">Geographic Diversification</h3>
+                    <p class="text-slate-600">New producer nations in Eastern Europe, the Andes, and Africa are challenging traditional leaders, creating "greenfield" infrastructure opportunities.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="text-4xl mb-3 text-cyan-600">🔗</div>
+                    <h3 class="text-xl font-semibold mb-2">The "First Mile" Bottleneck</h3>
+                    <p class="text-slate-600">On-farm transport remains a primary source of inefficiency and product loss, representing the core challenge Centro Aceros' systems solve.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="explorer" class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-12">
+            <h2 class="text-3xl font-bold text-center mb-6">Interactive Opportunity Explorer</h2>
+            <p class="text-center text-slate-600 mb-8 max-w-2xl mx-auto">Select an opportunity below to explore its market signals, inherent challenges, and the recommended 'cable vía' system fit. The highest priority opportunities are listed first.</p>
+            
+            <div class="flex flex-wrap justify-center gap-3 md:gap-4 mb-8">
+                <button id="btn-colombia" class="opportunity-tab font-semibold py-3 px-5 rounded-lg shadow-sm bg-white border border-slate-200">🇨🇴 Andean Frontier (P1)</button>
+                <button id="btn-europe" class="opportunity-tab font-semibold py-3 px-5 rounded-lg shadow-sm bg-white border border-slate-200">🇪🇺 Eastern Europe (P2)</button>
+                <button id="btn-kenya" class="opportunity-tab font-semibold py-3 px-5 rounded-lg shadow-sm bg-white border border-slate-200">🇰🇪 East Africa (P3)</button>
+                <button id="btn-india" class="opportunity-tab font-semibold py-3 px-5 rounded-lg shadow-sm bg-white border border-slate-200">🇮🇳 India (P4)</button>
+            </div>
+
+            <div id="opportunity-content" class="fade-in">
+            </div>
+        </section>
+
+        <section id="comparison">
+            <h2 class="text-3xl font-bold text-center mb-8">Comparative Analysis & Strategic Recommendations</h2>
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-12">
+                <h3 class="text-2xl font-semibold mb-4">Opportunity Matrix</h3>
+                <p class="text-slate-600 mb-6">This matrix provides a standardized comparison of the four strategic opportunities to aid in executive decision-making.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100">
+                                <th class="p-3 font-semibold text-sm">Opportunity Profile</th>
+                                <th class="p-3 font-semibold text-sm">Growth Driver</th>
+                                <th class="p-3 font-semibold text-sm">Challenge</th>
+                                <th class="p-3 font-semibold text-sm">System Fit</th>
+                                <th class="p-3 font-semibold text-sm">Risk</th>
+                                <th class="p-3 font-semibold text-sm text-center">Priority</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-slate-200 hover:bg-slate-50">
+                                <td class="p-3 font-medium">🇨🇴 Andean Frontier</td>
+                                <td class="p-3 text-slate-600">Year-round production, foreign investment.</td>
+                                <td class="p-3 text-slate-600">Severe mountainous terrain.</td>
+                                <td class="p-3 font-medium text-cyan-700">Medium & Light</td>
+                                <td class="p-3 text-amber-600">Medium</td>
+                                <td class="p-3 text-center font-bold text-lg text-cyan-700">1</td>
+                            </tr>
+                            <tr class="border-b border-slate-200 hover:bg-slate-50">
+                                <td class="p-3 font-medium">🇪🇺 Eastern Europe</td>
+                                <td class="p-3 text-slate-600">Explosive export growth to EU.</td>
+                                <td class="p-3 text-slate-600">Acute labor shortage, crop delicacy.</td>
+                                <td class="p-3 font-medium text-cyan-700">Light</td>
+                                <td class="p-3 text-red-600">High</td>
+                                <td class="p-3 text-center font-bold text-lg text-cyan-700">2</td>
+                            </tr>
+                            <tr class="border-b border-slate-200 hover:bg-slate-50">
+                                <td class="p-3 font-medium">🇰🇪 East Africa</td>
+                                <td class="p-3 text-slate-600">Established base seeking quality for export.</td>
+                                <td class="p-3 text-slate-600">Fragmented logistics, poor infrastructure.</td>
+                                <td class="p-3 font-medium text-cyan-700">Medium</td>
+                                <td class="p-3 text-amber-600">Medium</td>
+                                <td class="p-3 text-center font-bold text-lg text-cyan-700">3</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-medium">🇮🇳 India</td>
+                                <td class="p-3 text-slate-600">Government mission to expand cultivation.</td>
+                                <td class="p-3 text-slate-600">New cultivation on marginal/uneven land.</td>
+                                <td class="p-3 font-medium text-cyan-700">Medium</td>
+                                <td class="p-3 text-green-600">Low</td>
+                                <td class="p-3 text-center font-bold text-lg text-cyan-700">4</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                 <h3 class="text-2xl font-semibold mb-4">Final Recommendations</h3>
+                 <p class="text-slate-600 mb-6">Based on market potential, urgency of need, and risk, the following prioritization is recommended to guide market entry efforts.</p>
+                 <div class="space-y-4">
+                    <div class="border border-cyan-600 bg-cyan-50 rounded-lg p-4">
+                        <h4 class="font-bold text-lg text-cyan-800">Priority 1: Colombia (Andean Avocado & Berry Frontier)</h4>
+                        <p class="text-cyan-900">Highest priority due to massive investment, a persistent physical challenge (terrain) our systems are uniquely suited to solve, and a lower geopolitical risk profile.</p>
+                    </div>
+                    <div class="border border-slate-300 bg-slate-50 rounded-lg p-4">
+                        <h4 class="font-bold text-lg">Priority 2: Eastern Europe (High-Value Blueberry Cultivation)</h4>
+                        <p class="text-slate-700">High priority due to the extreme urgency of the labor shortage, creating a powerful driver for automation and resilience technology.</p>
+                    </div>
+                    <div class="border border-slate-300 bg-slate-50 rounded-lg p-4">
+                        <h4 class="font-bold text-lg">Priority 3: Kenya (Aggregating Smallholder Avocados)</h4>
+                        <p class="text-slate-700">Requires a B2B sales model targeting cooperatives. Opportunity lies in solving systemic inefficiency to improve quality for export.</p>
+                    </div>
+                     <div class="border border-slate-300 bg-slate-50 rounded-lg p-4">
+                        <h4 class="font-bold text-lg">Priority 4: India (Dragon Fruit Expansion)</h4>
+                        <p class="text-slate-700">A promising, forward-looking market. Focus on positioning 'cable vía' as a foundational technology for new, large-scale ventures.</p>
+                    </div>
+                 </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-300 mt-12">
+        <div class="container mx-auto px-8 py-4 text-center">
+            <p>&copy; 2025 Centro Aceros Strategic Market Analysis. For internal use only.</p>
+        </div>
+    </footer>
+
+    <script>
+        const opportunityData = {
+            colombia: {
+                title: "The Andean Avocado & Berry Frontier",
+                location: "Colombia",
+                products: "Hass Avocados, Blueberries",
+                marketSignal: `Colombia is experiencing "unprecedented growth," rapidly becoming a top global exporter of Hass avocados and showing an exponential trajectory in blueberries. Its unique mountain climate allows for 52-week-a-year production, a massive strategic edge over seasonal competitors. This has attracted significant foreign investment and is supported by improving port logistics.`,
+                challenge: `The primary challenge is the "tough Andean topography." Orchards on steep mountain slopes make transport by traditional vehicles inefficient and dangerous. This reliance on manual labor over difficult terrain creates bottlenecks, delays the critical harvest-to-cooling cycle, and increases product damage, reducing export quality.`,
+                systemFit: "Medium & Light Systems",
+                businessCase: `The 'cable vía' directly neutralizes the main obstacle: gravity and terrain. The **Medium System** is perfect for heavy avocado bins, while the **Light System** suits delicate blueberries. By providing a safe, efficient path from inaccessible slopes, it reduces labor dependency, speeds up logistics, and minimizes product damage, maximizing the percentage of export-grade fruit.`,
+                chart: {
+                    labels: ['Hass Avocado Exports', 'Blueberry Area Growth'],
+                    data: [100, 669],
+                    label: '% Growth Projection'
+                }
+            },
+            europe: {
+                title: "High-Value Blueberry Cultivation",
+                location: "Eastern Europe (Ukraine & Georgia)",
+                products: "Blueberries, Raspberries",
+                marketSignal: `The region is seeing meteoric growth, strategically targeting the high-value EU market. Georgia's blueberry exports surged 2.5x in 2023, while Ukraine's exports have accelerated despite the war, supported by government grants. The formation of professional producer associations signals a maturing industry ready for new technology.`,
+                challenge: `A critical convergence of two factors: a severe, structural labor shortage in Ukraine due to the ongoing war, and the extremely delicate nature of blueberries. Manual transport is labor-intensive, slow, and increases the risk of bruising, which reduces the marketable yield of this high-value crop and shortens its shelf-life.`,
+                systemFit: "Light System",
+                businessCase: `The **Light System (< 20 kg)** is the ideal solution. It mechanizes transport, drastically reducing reliance on a volatile labor pool—a key strategic investment in business continuity. Furthermore, by minimizing handling and the time to cooling, it preserves fruit quality, maximizing the volume of premium-grade berries sold at top prices in the EU.`,
+                chart: {
+                    labels: ["Georgia Export Growth '23", "Ukraine Annual Growth"],
+                    data: [150, 21],
+                    label: '% Growth'
+                }
+            },
+            kenya: {
+                title: "Aggregating Smallholder Avocados",
+                location: "East Africa (Kenya)",
+                products: "Hass & Fuerte Avocados",
+                marketSignal: `Kenya is a global avocado powerhouse, ranking 6th worldwide and 1st in Africa. The industry is vital to its economy, and the government is actively promoting expansion to access new high-value markets like China and India. The sector's structure is unique, with ~70% of production coming from hundreds of thousands of smallholder farmers.`,
+                challenge: `The value chain suffers from staggering post-harvest losses (up to 40%) due to fragmented logistics. Moving fruit from thousands of dispersed small farms to central packhouses is slow and costly due to poor rural roads. This delay and damage from bumpy transit hurt the quality and reputation of Kenyan avocados in international markets.`,
+                systemFit: "Medium System",
+                businessCase: `The **Medium System (20-100 kg)** is an ideal solution for farmer cooperatives and exporter-run collection hubs. A 'cable vía' can serve as a logistical backbone for a cluster of small farms, connecting them to a central collection point. This investment reduces fruit damage, lowers costs, and ensures higher-quality raw material, making the entire operation more competitive for export.`,
+                chart: {
+                    labels: ['Smallholder Contribution', 'Post-Harvest Loss (High End)'],
+                    data: [70, 40],
+                    label: '%'
+                }
+            },
+            india: {
+                title: "India's Dragon Fruit Expansion",
+                location: "India",
+                products: "Dragon Fruit (Pitahaya)",
+                marketSignal: `The Indian government is driving a massive mission to expand dragon fruit cultivation to 50,000 hectares, aiming for import substitution and future exports. This top-down push is amplified by strong market fundamentals, as farmers view it as a highly profitable "super crop" with rising domestic demand.`,
+                challenge: `The government's strategy promotes cultivation on "degraded" and "barren" lands, meaning new orchards will often have underdeveloped infrastructure and uneven terrain. As these plantations scale, manually carrying harvested fruit from deep within large farms will become a major operational bottleneck and a significant recurring cost.`,
+                systemFit: "Medium System",
+                businessCase: `The **Medium System (20-100 kg)** offers a proactive solution for these new, large-scale plantations. It allows new ventures to "leapfrog" traditional inefficiencies by integrating modern logistics into their initial farm design. The system reduces manual labor, protects the high-value fruit from damage, and helps ensure the crop meets stringent quality standards for premium and export markets from day one.`,
+                chart: {
+                    labels: ['Current Area (ha)', 'Target Area (ha)'],
+                    data: [3000, 50000],
+                    label: 'Hectares'
+                }
+            }
+        };
+
+        const contentDiv = document.getElementById('opportunity-content');
+        const buttons = document.querySelectorAll('.opportunity-tab');
+        let myChart = null;
+
+        function displayOpportunity(id) {
+            const data = opportunityData[id];
+            if (!data) return;
+
+            contentDiv.innerHTML = `
+                <div class="grid md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-1">${data.title}</h3>
+                        <p class="text-md font-semibold text-cyan-700 mb-4">${data.location} | Core Products: ${data.products}</p>
+                        
+                        <div class="space-y-4 text-slate-700">
+                            <div>
+                                <h4 class="font-semibold text-lg mb-1">Market Signal</h4>
+                                <p>${data.marketSignal}</p>
+                            </div>
+                             <div>
+                                <h4 class="font-semibold text-lg mb-1">Inherent Challenge</h4>
+                                <p>${data.challenge}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-5">
+                            <h4 class="font-semibold text-lg mb-2">System Fit & Business Case</h4>
+                            <p class="text-slate-700 mb-3">${data.businessCase}</p>
+                            <div class="text-center bg-cyan-700 text-white font-bold py-2 px-4 rounded-md">
+                                Recommended Fit: ${data.systemFit}
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="opportunityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            contentDiv.classList.remove('fade-in');
+            void contentDiv.offsetWidth;
+            contentDiv.classList.add('fade-in');
+
+            updateChart(data.chart);
+            
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.id === `btn-${id}`) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function updateChart(chartData) {
+            const ctx = document.getElementById('opportunityChart').getContext('2d');
+            if (myChart) {
+                myChart.destroy();
+            }
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: chartData.label,
+                        data: chartData.data,
+                        backgroundColor: 'rgba(14, 116, 144, 0.7)',
+                        borderColor: 'rgba(14, 116, 144, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(203, 213, 225, 0.5)'
+                            }
+                        },
+                        x: {
+                           grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleFont: {
+                                size: 14,
+                            },
+                            bodyFont: {
+                                size: 12,
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US').format(context.parsed.y);
+                                        if (context.dataset.label.includes('%')) {
+                                            label += '%';
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                const id = button.id.replace('btn-', '');
+                displayOpportunity(id);
+            });
+        });
+
+        window.addEventListener('load', () => {
+            displayOpportunity('colombia');
+        });
+    </script>
+
+</body>
+</html>
