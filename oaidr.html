@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Opportunities for Aerial Cableways in Agriculture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .opportunity-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .modal-bg {
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            max-height: 90vh;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header Section -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">The Future of Farming is in the Air</h1>
+            <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">An analysis of high-return opportunities for aerial cableway systems ("cable vías") in agriculture, revolutionizing transport in steep or hard-to-access terrains.</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <!-- Ranked Opportunities Section -->
+        <section id="opportunities">
+            <h2 class="text-2xl font-bold text-center mb-8">Top Ranked Opportunities</h2>
+            <div id="opportunity-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Opportunity cards will be dynamically inserted here -->
+            </div>
+        </section>
+
+        <!-- Near-Miss Opportunities Section -->
+        <section id="near-misses" class="mt-20">
+            <h2 class="text-2xl font-bold text-center mb-8">Near-Miss Opportunities</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <h3 class="font-semibold text-lg mb-2">High-Mountain Tea</h3>
+                    <p class="text-gray-600 text-sm">Sri Lanka & East Africa. Weak ROI due to low leaf value and depressed wages, but could become vital if labor costs rise or quality premiums increase.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <h3 class="font-semibold text-lg mb-2">Steep Orchard Citrus</h3>
+                    <p class="text-gray-600 text-sm">China (Hubei, Chongqing). A potential near-miss worth exploring as rural populations shrink and wages climb, but limited English-source data is available.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <h3 class="font-semibold text-lg mb-2">Cocoa</h3>
+                    <p class="text-gray-600 text-sm">Andean Foothills (Peru, Colombia). ROI isn't obvious yet due to moderate value and less urgent perishability. A trigger could be a rural development program.</p>
+                </div>
+                 <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <h3 class="font-semibold text-lg mb-2">Bananas</h3>
+                    <p class="text-gray-600 text-sm">Smallholders in Highlands. A "sleeping" opportunity if donors invest in rural infrastructure for market access. The main challenges are financing and maintenance.</p>
+                </div>
+                 <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <h3 class="font-semibold text-lg mb-2">Olives</h3>
+                    <p class="text-gray-600 text-sm">Mediterranean Terraces. Cooperative ropeway installations might become appealing if EU farm labor costs continue to rise or migrant labor supply falls.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for Detailed View -->
+    <div id="opportunity-modal" class="fixed inset-0 z-50 items-center justify-center p-4 hidden modal-bg">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-auto overflow-y-auto modal-content">
+            <div class="sticky top-0 bg-white p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="modal-title" class="text-2xl font-bold"></h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            </div>
+            <div class="p-6 md:p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="font-semibold text-lg mb-4 text-gray-700">Opportunity Analysis</h4>
+                        <div class="chart-container">
+                            <canvas id="modal-chart"></canvas>
+                        </div>
+                        <div class="mt-6 space-y-3">
+                            <p><strong><span class="text-indigo-600">COGS Savings:</span></strong> <span id="modal-cogs"></span></p>
+                            <p><strong><span class="text-indigo-600">Payback Period:</span></strong> <span id="modal-payback"></span> months</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-lg mb-4 text-gray-700">Key Insights</h4>
+                        <div class="space-y-4 text-gray-600">
+                            <p id="modal-notes"></p>
+                            <div>
+                                <h5 class="font-semibold mb-1 text-gray-800">Top Risks:</h5>
+                                <p id="modal-risks"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <footer class="text-center py-6 mt-12 bg-gray-100 border-t">
+        <p class="text-gray-500">Data-driven insights for agricultural innovation.</p>
+    </footer>
+
+    <script>
+        const opportunitiesData = [
+          {
+            "crop": "Apples",
+            "geography": "India (Himachal highlands)",
+            "cf": 4, "pi": 5, "vd": 4, "ls": 5, "inf": 5, "mech": 5, "mm": 3, "af": 2,
+            "cogs_savings_est_pct": "30–50%",
+            "payback_mo": "18–30",
+            "top_risks": "Weather delays; Permit for forest crossing; Labor union concerns",
+            "notes": "Mountain orchards lack roads; manual haulage doubles cost. Drones tested at ₹6/kg; cable could cut transport time/cost by half.",
+            "opportunity_score": 74
+          },
+          {
+            "crop": "Oil Palm",
+            "geography": "Malaysia (Sabah hills)",
+            "cf": 5, "pi": 5, "vd": 2, "ls": 5, "inf": 5, "mech": 4, "mm": 3, "af": 2,
+            "cogs_savings_est_pct": "20–30%",
+            "payback_mo": "24–36",
+            "top_risks": "Initial capex; Maintenance skills; Tropical storms",
+            "notes": "Steep estates short >40k workers; fruit lost to delays. Cable lines (<60° slope) replace new roads at 19% lower total cost.",
+            "opportunity_score": 72
+          },
+          {
+            "crop": "Coffee",
+            "geography": "Colombia (Andes)",
+            "cf": 5, "pi": 4, "vd": 3, "ls": 4, "inf": 4, "mech": 5, "mm": 3, "af": 3,
+            "cogs_savings_est_pct": "15–25%",
+            "payback_mo": "24–30",
+            "top_risks": "Smallholder financing; Terrain landslides; Picker training",
+            "notes": "550k families on slopes >70%; cables cut haul time 58→15 min/day boosting picker output; ~$4–9k USD install on 3–9 ha.",
+            "opportunity_score": 65
+          },
+          {
+            "crop": "Wine Grapes",
+            "geography": "Germany (Mosel valley)",
+            "cf": 5, "pi": 4, "vd": 3, "ls": 4, "inf": 3, "mech": 3, "mm": 2, "af": 3,
+            "cogs_savings_est_pct": "10–20%",
+            "payback_mo": "30–40",
+            "top_risks": "Heritage site rules; Grower aging out; Capital for co-op system",
+            "notes": "Iconic 60% slopes need ~1,500 labor-hrs/ha (vs 180 on flat). Monorails exist but 30%+ vineyards still manual; cable lifts could halve harvest labor.",
+            "opportunity_score": 58
+          },
+          {
+            "crop": "Avocado",
+            "geography": "Mexico (Michoacán)",
+            "cf": 3, "pi": 2, "vd": 5, "ls": 2, "inf": 3, "mech": 5, "mm": 5, "af": 3,
+            "cogs_savings_est_pct": "10–15%",
+            "payback_mo": "36–48",
+            "top_risks": "Cartel theft/vandalism; Farmer coordination; Tree layout adjustments",
+            "notes": "World’s #1 avocado region on rugged terrain. Labor is cheap but quality demands quick gentle handling. Rising wages could flip ROI positive soon.",
+            "opportunity_score": 50
+          },
+          {
+            "crop": "Tea (leaves)",
+            "geography": "India (Darjeeling hills)",
+            "cf": 5, "pi": 3, "vd": 2, "ls": 4, "inf": 3, "mech": 4, "mm": 2, "af": 4,
+            "cogs_savings_est_pct": "5–15%",
+            "payback_mo": "30–36",
+            "top_risks": "Plantation financial stress; Union resistance; Safety standards",
+            "notes": "High-altitude gardens on 45° slopes use human chains for leaf sacks. Cost savings are limited, but cableways would ease drudgery and improve quality.",
+            "opportunity_score": 50
+          }
+        ];
+
+        const grid = document.getElementById('opportunity-grid');
+        const modal = document.getElementById('opportunity-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        let modalChart = null;
+
+        // Function to create a score bar
+        function createScoreBar(score) {
+            const percentage = (score / 100) * 100;
+            const color = percentage > 70 ? 'bg-green-500' : percentage > 55 ? 'bg-yellow-500' : 'bg-orange-500';
+            return `
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="${color} h-2.5 rounded-full" style="width: ${percentage}%"></div>
+                </div>
+            `;
+        }
+
+        // Populate the main grid
+        opportunitiesData.forEach((opp, index) => {
+            const card = document.createElement('div');
+            card.className = 'opportunity-card bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer';
+            card.dataset.index = index;
+            card.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-xl text-gray-900">${opp.crop}</h3>
+                        <p class="text-gray-500 text-sm">${opp.geography}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold text-indigo-600">${opp.opportunity_score}</p>
+                        <p class="text-xs text-gray-500">Score</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    ${createScoreBar(opp.opportunity_score)}
+                </div>
+                <p class="mt-4 text-gray-600 text-sm h-16 overflow-hidden">${opp.notes}</p>
+            `;
+            grid.appendChild(card);
+
+            card.addEventListener('click', () => openModal(index));
+        });
+        
+        // Modal functionality
+        function openModal(index) {
+            const opp = opportunitiesData[index];
+            document.getElementById('modal-title').innerText = `${opp.crop} in ${opp.geography}`;
+            document.getElementById('modal-cogs').innerText = opp.cogs_savings_est_pct;
+            document.getElementById('modal-payback').innerText = opp.payback_mo;
+            document.getElementById('modal-notes').innerText = opp.notes;
+            document.getElementById('modal-risks').innerText = opp.top_risks;
+            
+            const chartCanvas = document.getElementById('modal-chart');
+            const chartData = {
+                labels: ['Cable Fit', 'Pain Intensity', 'Value Density', 'Labor', 'Infra.', 'Mechanization', 'Momentum', 'Friction'],
+                datasets: [{
+                    label: 'Factor Score',
+                    data: [opp.cf, opp.pi, opp.vd, opp.ls, opp.inf, opp.mech, opp.mm, 5 - opp.af], // Inverting friction for visualization
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(79, 70, 229, 1)'
+                }]
+            };
+
+            if (modalChart) {
+                modalChart.destroy();
+            }
+
+            modalChart = new Chart(chartCanvas, {
+                type: 'radar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 5,
+                            ticks: {
+                                stepSize: 1,
+                                backdropColor: 'rgba(255, 255, 255, 0.75)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") {
+                closeModal();
+            }
+        });
+
+    </script>
+</body>
+</html>
